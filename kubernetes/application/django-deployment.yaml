@@ -1,0 +1,81 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: django
+spec:
+  replicas: 2
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: django
+    spec:
+      containers:
+        - name: django
+          image: application_django
+          imagePullPolicy: Never
+          args:
+          - /gunicorn.sh
+          ports:
+            - containerPort: 5000
+              name: django
+          envFrom:
+          - configMapRef:
+              name: special-config
+          env:
+          - name: DJANGO_DATABASE_URL
+            value: 127.0.0.1:5432
+          - name: DJANGO_DATABASE_USER
+            valueFrom:
+              secretKeyRef:
+                name: cloudsql-db-credentials
+                key: username
+          - name: DJANGO_DATABASE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: cloudsql-db-credentials
+                key: password
+          - name: DJANGO_SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: dsn
+          - name: DJANGO_GS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: storages-credentials
+                key: access_key_id
+          - name: DJANGO_GS_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: storages-credentials
+                key: access_key
+          name: django
+        - image: gcr.io/cloudsql-docker/gce-proxy:1.09
+          name: cloudsql-proxy
+          command: ["/cloud_sql_proxy", "--dir=/cloudsql",
+                    "-instances=scalable-boilerplate:europe-west1:rekome-db=tcp:5432",
+                    "-credential_file=/secrets/cloudsql/credentials.json"]
+          volumeMounts:
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql
+              readOnly: true
+            - name: ssl-certs
+              mountPath: /etc/ssl/certs
+            - name: cloudsql
+              mountPath: /cloudsql
+
+      volumes:
+      - name: cloudsql-instance-credentials
+        secret:
+          secretName: cloudsql-instance-credentials
+      - name: ssl-certs
+        hostPath:
+          path: /etc/ssl/certs
+      - name: cloudsql
+        emptyDir:
+      - name: config-volume
+        configMap:
+          name: django-config
+
+status: {}

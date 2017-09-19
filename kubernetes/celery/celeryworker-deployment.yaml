@@ -1,0 +1,52 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  name: celeryworker
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: celeryworker
+    spec:
+      containers:
+      - args:
+        - celery
+        - -A
+        - rekome.taskapp
+        - worker
+        - -l
+        - INFO
+        env:
+        - name: POSTGRES_PASSWORD
+          value: mysecretpass
+        - name: POSTGRES_USER
+          value: postgresuser
+        - name: DJANGO_ADMIN_URL
+        - name: DJANGO_SETTINGS_MODULE
+          value: config.settings.test
+        - name: DJANGO_SECRET_KEY
+          value: zv72yg_(unc2@qqm^n=&ex42oi-qioignqlvbjjh64k6(g6dg)
+        - name: DJANGO_ALLOWED_HOSTS
+        - name: DJANGO_AWS_ACCESS_KEY_ID
+        - name: DJANGO_AWS_SECRET_ACCESS_KEY
+        - name: DJANGO_AWS_STORAGE_BUCKET_NAME
+        - name: DJANGO_MAILGUN_API_KEY
+        - name: DJANGO_SERVER_EMAIL
+        - name: MAILGUN_SENDER_DOMAIN
+        - name: DJANGO_SECURE_SSL_REDIRECT
+          value: "False"
+        - name: DJANGO_ACCOUNT_ALLOW_REGISTRATION
+          value: "True"
+        - name: DJANGO_SENTRY_DSN
+        - name: MY_DOMAIN_NAME
+          value: staging.rekome.se
+        - name: C_FORCE_ROOT
+          value: "true"
+        name: celeryworker
+        resources: {}
+      restartPolicy: Always
+status: {}
